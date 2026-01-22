@@ -43,6 +43,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -80,17 +81,34 @@ fun HomeScreen(
         }
     ) { innerPadding ->
 
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(vitalList) {
-                VitalCard(it)
+        if (vitalList.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "No vitals recorded yet.\nTap + to add your first entry.",
+                    color = Color.Gray,
+                    fontSize = 16.sp,
+                    textAlign = TextAlign.Center
+                )
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(vitalList) {
+                    VitalCard(it)
+                }
             }
         }
+
 
         if (showDialog) {
             AddVitalDialog(
@@ -219,6 +237,12 @@ fun AddVitalDialog(
     var diaBP by rememberSaveable { mutableStateOf("") }
     var weight by rememberSaveable { mutableStateOf("") }
     var kicks by rememberSaveable { mutableStateOf("") }
+    val isValid = sysBP.isNotBlank() &&
+            diaBP.isNotBlank() &&
+            weight.isNotBlank() &&
+            kicks.isNotBlank()
+
+
 
     Dialog(onDismissRequest = onDismiss) {
 
@@ -274,6 +298,7 @@ fun AddVitalDialog(
                         onDismiss()
                     },
                     modifier = Modifier.fillMaxWidth(),
+                    enabled = isValid,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF9C4DCC)
                     ),
