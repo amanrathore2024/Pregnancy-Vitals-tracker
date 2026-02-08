@@ -1,5 +1,12 @@
 package com.vitalstraker.presentation
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -17,6 +24,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Button
@@ -41,12 +49,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.core.content.ContextCompat
 import com.vitalstraker.R
 import com.vitalstraker.data.local.model.VitalItem
 import com.vitalstraker.presentation.ui.theme.Card_dark_background
@@ -56,12 +67,55 @@ import com.vitalstraker.presentation.ui.theme.Text_heading
 import com.vitalstraker.presentation.utils.getCurrentFormattedDateTime
 import org.koin.androidx.compose.koinViewModel
 
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     viewModel: VitalViewModel = koinViewModel()
 ) {
     var showDialog by rememberSaveable { mutableStateOf(false) }
+    val context = LocalContext.current
+
+    val shouldAsk by viewModel.shouldRequestPermission.collectAsState()
+
+    val permissionLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { isGranted ->
+
+            viewModel.onPermissionRequested()
+
+            if (!isGranted) {
+                Toast.makeText(
+                    context,
+                    "Notification permission required for REMINDERS. Enable from settings.",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+
+    LaunchedEffect(Unit) {
+        val granted =
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+
+        viewModel.onPermissionChecked(granted)
+    }
+
+
+    LaunchedEffect(shouldAsk) {
+        if (shouldAsk) {
+            viewModel.onPermissionRequested()
+            permissionLauncher.launch(
+                Manifest.permission.POST_NOTIFICATIONS
+            )
+        }
+    }
+
+
+
 
     LaunchedEffect(Unit) {
         viewModel.getVitals()
@@ -265,30 +319,45 @@ fun AddVitalDialog(
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(
                         value = sysBP,
-                        onValueChange = { sysBP = it },
+                        onValueChange = { inp -> sysBP = inp.filter { it.isDigit() } },
                         label = { Text("Sys BP") },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Number
+                        ),
                         modifier = Modifier.weight(1f)
                     )
 
                     OutlinedTextField(
                         value = diaBP,
-                        onValueChange = { diaBP = it },
+                        onValueChange = { inp -> diaBP = inp.filter { it.isDigit() } },
                         label = { Text("Dia BP") },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Number
+                        ),
                         modifier = Modifier.weight(1f)
                     )
                 }
 
                 OutlinedTextField(
                     value = weight,
-                    onValueChange = { weight = it },
+                    onValueChange = { inp -> weight = inp.filter { it.isDigit() } },
                     label = { Text("Weight (in kg)") },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number
+                    ),
                     modifier = Modifier.fillMaxWidth()
                 )
 
+
                 OutlinedTextField(
                     value = kicks,
-                    onValueChange = { kicks = it },
+                    onValueChange = { input ->
+                        kicks = input.filter { it.isDigit() }
+                    },
                     label = { Text("Baby Kicks") },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number
+                    ),
                     modifier = Modifier.fillMaxWidth()
                 )
 

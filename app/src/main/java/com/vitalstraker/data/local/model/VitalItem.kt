@@ -8,7 +8,6 @@ import androidx.room.PrimaryKey
 data class VitalItem(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
-
     val heartRate: String,
     val bp: String,
     val weight: String,

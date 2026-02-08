@@ -10,5 +10,5 @@ fun getCurrentFormattedDateTime(): String {
         Locale.ENGLISH
     )
 
-    return LocalDateTime.now().format(formatter).lowercase()
+    return LocalDateTime.now().format(formatter).uppercase()
 }
